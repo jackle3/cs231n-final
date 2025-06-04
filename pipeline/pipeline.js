@@ -58,7 +58,7 @@ const generateFrame = async (prompt, outputPath) => {
       input: {
         seed: 231,
         prompt,
-        hf_lora: "isaackan/m1a",
+        hf_lora: "isaackan/cs231n-cat",
         lora_scale: 0.8,
         num_outputs: 1,
         aspect_ratio: "1:1",
@@ -85,22 +85,25 @@ const main = async () => {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  let character =
-    "Mia Watanabe is a college-aged Japanese-American girl with a Pixar-style design, featuring large, expressive brown eyes framed by long, dark lashes. Her face is round with a slight angular jawline, and her skin is sun-kissed, dotted with freckles across her cheeks and nose. \
-She has wavy, dark brown hair that falls just past her shoulders, often tangled and tousled from the sea, with a few lighter strands hinting at sun exposure. Her eyebrows are thick but well-shaped, conveying a sense of determination and intensity.\
-Mia typically wears a worn, oversized hoodie in a seafoam green hue, its sleeves slightly frayed. Underneath, she wears a snug, patched-up wetsuit with colorful, hand-stitched sections that hint at her artistic, resourceful nature. Around her neck hangs a silver seashell necklace that she never takes off — her only connection to her late mother.\
-She walks with a confident stride, her board shorts slightly oversized, hanging loosely around her hips. Her feet are usually bare or in well-worn flip-flops, toes slightly sandy and tanned.";
+  //   let character =
+  //     "Mia Watanabe is a college-aged Japanese-American girl with a Pixar-style design, featuring large, expressive brown eyes framed by long, dark lashes. Her face is round with a slight angular jawline, and her skin is sun-kissed, dotted with freckles across her cheeks and nose. \
+  // She has wavy, dark brown hair that falls just past her shoulders, often tangled and tousled from the sea, with a few lighter strands hinting at sun exposure. Her eyebrows are thick but well-shaped, conveying a sense of determination and intensity.\
+  // Mia typically wears a worn, oversized hoodie in a seafoam green hue, its sleeves slightly frayed. Underneath, she wears a snug, patched-up wetsuit with colorful, hand-stitched sections that hint at her artistic, resourceful nature. Around her neck hangs a silver seashell necklace that she never takes off — her only connection to her late mother.\
+  // She walks with a confident stride, her board shorts slightly oversized, hanging loosely around her hips. Her feet are usually bare or in well-worn flip-flops, toes slightly sandy and tanned.";
+  let character = "A cat standing upright wearing a chef's uniform";
 
-  let plot =
+  let plot1 =
     "a pixar style coming of age story of a girl who gets a chance to compete at a surf tournament but gets smashed by a massive wave, it is only after she makes her own board with a fat penguin that she realizes the true meaning of surfing is to have fun";
   let plot2 =
     "a pixar style coming of age story of a young track star who gets lost on the way to the olympics and ends up in a small town where she meets a rusty old car that teaches her the value of friendship and perseverance";
   let plot3 =
     "a pixar style coming of age story of a young islander girl who seeks adventure and is chosen by the ocean to return the heart of the sea with the help of a magical hawk. It is only after she leaves home that she realizes that family is the most important adventure of all";
+  let plot4 =
+    "a pixar style story where every character is a cat. The main character wants to become a chef but his family of cats needs him to stay at home. he travels to paris and partners with another cat chef, eventually convincing one of France's harshest critics, to love his food.";
 
   // Generate 10 scene prompts
   console.time("generateScenes");
-  let scenePrompts = await generateScenes(character, plot3);
+  let scenePrompts = await generateScenes(character, plot4);
   console.timeEnd("generateScenes");
 
   // Save prompts
