@@ -3,6 +3,7 @@ import os
 import requests
 import time
 from http import HTTPStatus
+from fileio_wrapper import Fileio
 
 load_dotenv()
 
@@ -14,22 +15,21 @@ API_KEY = os.getenv("QWEN_API_KEY")
 BASE_URL = "https://dashscope-intl.aliyuncs.com/api/v1"
 
 def upload_to_tmpfiles(image_path):
-    """Upload image to file.io and return the URL"""
-    with open(image_path, 'rb') as f:
-        response = requests.post(
-            'https://file.io',
-            files={'file': f}
-        )
-        print(f"Upload response: {response.status_code}")
-        print(f"Response content: {response.text}")
+    """Upload image to filebin.net and return the URL"""
+    # Generate a unique bin name using timestamp
+    bin_name = f"bin_{int(time.time())}"
+    filename = os.path.basename(image_path)
     
-    if response.status_code == 200:
-        result = response.json()
-        if result.get('success'):
-            return result['link']
-        else:
-            print(f"Upload failed: {result}")
-            return None
+    url = f'https://filebin.net/{bin_name}/{filename}'
+    
+    with open(image_path, 'rb') as f:
+        headers = {'Content-Type': 'application/octet-stream'}
+        response = requests.post(url, data=f, headers=headers)
+    
+    if response.status_code == 201:
+        return f"https://filebin.net/{bin_name}/{filename}"
+    
+    print(f"Upload failed with status code: {response.status_code}")
     return None
 
 def create_video_task(first_frame_url, last_frame_url, prompt):
@@ -97,22 +97,25 @@ def generate_video(first_frame_url, last_frame_url, prompt):
     return video_url
 
 if __name__ == "__main__":
-    # Upload local images to get URLs
-    print("Uploading first frame...")
-    first_frame_url = upload_to_tmpfiles(FIRST_FRAME_PATH)
-    if not first_frame_url:
-        print("Failed to upload first frame")
-        exit(1)
-    print(f"First frame uploaded: {first_frame_url}")
+    # # Upload local images to get URLs
+    # print("Uploading first frame...")
+    # first_frame_url = upload_to_tmpfiles(FIRST_FRAME_PATH)
+    # if not first_frame_url:
+    #     print("Failed to upload first frame")
+    #     exit(1)
+    # print(f"First frame uploaded: {first_frame_url}")
     
-    print("Uploading last frame...")
-    last_frame_url = upload_to_tmpfiles(LAST_FRAME_PATH)
-    if not last_frame_url:
-        print("Failed to upload last frame")
-        exit(1)
-    print(f"Last frame uploaded: {last_frame_url}")
+    # print("Uploading last frame...")
+    # last_frame_url = upload_to_tmpfiles(LAST_FRAME_PATH)
+    # if not last_frame_url:
+    #     print("Failed to upload last frame")
+    #     exit(1)
+    # print(f"Last frame uploaded: {last_frame_url}")
     
-    prompt = "Realistic style, a black kitten curiously looking at the sky, the camera gradually rises from eye level, finally looking down at the kitten's curious eyes."
+    first_frame_url = "https://files.catbox.moe/07l454.png"
+    last_frame_url = "https://files.catbox.moe/t8lzdn.png"
+    
+    prompt = "Realistic style, the sea waves are crashing on the shore, the camera gradually rises from eye level, then transitions to a scene of the town square."
     
     try:
         video_url = generate_video(first_frame_url, last_frame_url, prompt)
