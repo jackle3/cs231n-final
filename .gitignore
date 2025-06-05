@@ -180,4 +180,6 @@ cython_debug/
 .env
 node_modules/
 package*.json
-app/
+app/database
+app/components
+app/constants

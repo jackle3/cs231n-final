@@ -72,7 +72,6 @@ const generateFrame = async (prompt, outputPath) => {
     }
   );
 
-  console.log(output.url());
   await writeFile(outputPath, output);
   console.log(`Image saved as ${outputPath}`);
 };
@@ -85,12 +84,16 @@ const main = async () => {
     fs.mkdirSync(outputDir, { recursive: true });
   }
 
-  //   let character =
-  //     "Mia Watanabe is a college-aged Japanese-American girl with a Pixar-style design, featuring large, expressive brown eyes framed by long, dark lashes. Her face is round with a slight angular jawline, and her skin is sun-kissed, dotted with freckles across her cheeks and nose. \
-  // She has wavy, dark brown hair that falls just past her shoulders, often tangled and tousled from the sea, with a few lighter strands hinting at sun exposure. Her eyebrows are thick but well-shaped, conveying a sense of determination and intensity.\
-  // Mia typically wears a worn, oversized hoodie in a seafoam green hue, its sleeves slightly frayed. Underneath, she wears a snug, patched-up wetsuit with colorful, hand-stitched sections that hint at her artistic, resourceful nature. Around her neck hangs a silver seashell necklace that she never takes off — her only connection to her late mother.\
-  // She walks with a confident stride, her board shorts slightly oversized, hanging loosely around her hips. Her feet are usually bare or in well-worn flip-flops, toes slightly sandy and tanned.";
-  let character = "A cat standing upright wearing a chef's uniform";
+  let character1 =
+    "Mia Watanabe is a college-aged Japanese-American girl with a Pixar-style design, featuring large, expressive brown eyes framed by long, dark lashes. Her face is round with a slight angular jawline, and her skin is sun-kissed, dotted with freckles across her cheeks and nose. \
+  She has wavy, dark brown hair that falls just past her shoulders, often tangled and tousled from the sea, with a few lighter strands hinting at sun exposure. Her eyebrows are thick but well-shaped, conveying a sense of determination and intensity.\
+  Mia typically wears a worn, oversized hoodie in a seafoam green hue, its sleeves slightly frayed. Underneath, she wears a snug, patched-up wetsuit with colorful, hand-stitched sections that hint at her artistic, resourceful nature. Around her neck hangs a silver seashell necklace that she never takes off — her only connection to her late mother.\
+  She walks with a confident stride, her board shorts slightly oversized, hanging loosely around her hips. Her feet are usually bare or in well-worn flip-flops, toes slightly sandy and tanned.";
+  let character2 = "A cat standing upright wearing a chef's uniform";
+  let character3 =
+    "Buster is a tall lanky man in his mid-40s with curly black hair and a neat beard. His face is long and expressive, with a slightly crooked nose and hazel eyes. \
+  He wears a gray hoodie that looks like it's been through a hundred adventures (faded at the elbows and stretched at the cuffs), scuffed jeans, and old sneakers. \
+  character sheet, in different poses and angles, including front view, side view, and back view, turnaround sheet, floating in outer space background, visible face, portrait";
 
   let plot1 =
     "a pixar style coming of age story of a girl who gets a chance to compete at a surf tournament but gets smashed by a massive wave, it is only after she makes her own board with a fat penguin that she realizes the true meaning of surfing is to have fun";
@@ -103,7 +106,7 @@ const main = async () => {
 
   // Generate 10 scene prompts
   console.time("generateScenes");
-  let scenePrompts = await generateScenes(character, plot4);
+  let scenePrompts = await generateScenes(character3, plot4);
   console.timeEnd("generateScenes");
 
   // Save prompts
@@ -112,9 +115,9 @@ const main = async () => {
     JSON.stringify(scenePrompts, null, 2)
   );
 
-  //   let scenePrompts = JSON.parse(
-  //     fs.readFileSync("runs/2025-06-04T00-28-18-504Z/prompts.json", "utf8")
-  //   );
+  // let scenePrompts = JSON.parse(
+  //   fs.readFileSync("runs/2025-06-04T20-37-03-973Z/prompts.json", "utf8")
+  // );
 
   let frames = scenePrompts.map((prompt, i) => {
     return generateFrame(prompt, `${outputDir}/frame-${i + 1}.png`);
