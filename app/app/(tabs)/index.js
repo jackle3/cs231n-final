@@ -14,7 +14,7 @@ import { useRouter } from "expo-router";
 import Entypo from "@expo/vector-icons/Entypo";
 
 import { db } from "@/database/db";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, where, query } from "firebase/firestore";
 
 export default function LandingScreen() {
   const router = useRouter();
@@ -22,8 +22,14 @@ export default function LandingScreen() {
 
   // Load all pre-trained profiles
   const getData = async () => {
-    const query = await getDocs(collection(db, "lora_profiles"));
-    setProfiles(query.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+    const q = query(
+      collection(db, "lora_profiles"),
+      where("is_active", "==", true)
+    );
+    const querySnapshot = await getDocs(q);
+    setProfiles(
+      querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+    );
   };
 
   useEffect(() => {
