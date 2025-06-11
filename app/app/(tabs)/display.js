@@ -50,7 +50,10 @@ export default function DisplayScreen() {
       console.log("Session data:", JSON.stringify(session, null, 2));
 
       // If the session hasn't started running yet, start the pipeline
-      if (session.state == "pending") {
+      if (session.state == "completed") {
+        setScenes(session.scenes);
+        setImages(session.images);
+      } else if (session.state == "pending") {
         console.log("Running pipeline");
         const pipeline = httpsCallable(functions, "pipeline", {
           timeout: 300000,

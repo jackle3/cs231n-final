@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
   },
   video: {
     width: 800,
-    height: 400,
+    height: 440,
     marginTop: 40,
   },
   characterPromptBox: {
