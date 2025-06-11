@@ -12,6 +12,8 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useEffect, useRef } from "react";
 
+import Carousel from "react-native-reanimated-carousel";
+
 // import PagerView from "react-native-pager-view";
 
 import { db, functions } from "@/database/db";
@@ -21,8 +23,17 @@ import { httpsCallable } from "firebase/functions";
 export default function DisplayScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+
   const [isLoading, setIsLoading] = useState(true);
   const [images, setImages] = useState([]);
+  const [scenes, setScenes] = useState([]);
+  const ref = useRef(null);
+
+  const WIDTH = Dimensions.get("window").width;
+
+  useEffect(() => {
+    ref.current?.scrollTo(0);
+  }, []);
 
   const sendPrompt = async (sessionId) => {
     if (!sessionId) {
@@ -33,8 +44,10 @@ export default function DisplayScreen() {
     try {
       // Fetch session document
       const sessionRef = doc(db, "sessions", sessionId);
-      const sessionDoc = await getDoc(sessionRef);
-      const session = sessionDoc.data();
+      let sessionDoc = await getDoc(sessionRef);
+      let session = sessionDoc.data();
+
+      console.log("Session data:", JSON.stringify(session, null, 2));
 
       // If the session hasn't started running yet, start the pipeline
       if (session.state == "pending") {
@@ -42,8 +55,45 @@ export default function DisplayScreen() {
         const pipeline = httpsCallable(functions, "pipeline", {
           timeout: 300000,
         });
-        const { data } = await pipeline({ sessionId, liveMode: false });
+        const { data } = await pipeline({ sessionId, liveMode: true });
+
+        // Fetch updated session document
+        sessionDoc = await getDoc(sessionRef);
+        session = sessionDoc.data();
+
+        const profileDoc = await getDoc(
+          doc(db, "lora_profiles", session.profileId)
+        );
+        const profile = profileDoc.data();
+
+        console.log(
+          "Updated session data:",
+          JSON.stringify(session.scenes, null, 2)
+        );
+
+        // Clean up the prompts
+        const cleanScenes = session.scenes.map((scene) => {
+          // Replace token with name
+          let cleanedScene = scene.replace(
+            new RegExp(profile.token, "g"),
+            profile.name
+          );
+
+          // Find and remove everything after "The scene is in the style of a"
+          const styleIndex = cleanedScene.indexOf(
+            "The scene is in the style of a"
+          );
+          if (styleIndex !== -1) {
+            cleanedScene = cleanedScene.substring(0, styleIndex);
+          }
+
+          return cleanedScene;
+        });
+
+        // Set generated images and scene prompts
         setImages(data);
+        setScenes(cleanScenes);
+
         console.log("Pipeline response:", JSON.stringify(data, null, 2));
       }
     } catch (error) {
@@ -52,87 +102,11 @@ export default function DisplayScreen() {
   };
 
   useEffect(() => {
-    setImages([
-      "https://storage.googleapis.com/cs231n-isaac.firebasestorage.app/sessions/ea7196fa-0b8b-4bf4-bd16-9ef8f88a7e09/frame-0.png",
-      "https://storage.googleapis.com/cs231n-isaac.firebasestorage.app/sessions/ea7196fa-0b8b-4bf4-bd16-9ef8f88a7e09/frame-1.png",
-      "https://storage.googleapis.com/cs231n-isaac.firebasestorage.app/sessions/ea7196fa-0b8b-4bf4-bd16-9ef8f88a7e09/frame-2.png",
-      "https://storage.googleapis.com/cs231n-isaac.firebasestorage.app/sessions/ea7196fa-0b8b-4bf4-bd16-9ef8f88a7e09/frame-3.png",
-      "https://storage.googleapis.com/cs231n-isaac.firebasestorage.app/sessions/ea7196fa-0b8b-4bf4-bd16-9ef8f88a7e09/frame-4.png",
-      "https://storage.googleapis.com/cs231n-isaac.firebasestorage.app/sessions/ea7196fa-0b8b-4bf4-bd16-9ef8f88a7e09/frame-5.png",
-      "https://storage.googleapis.com/cs231n-isaac.firebasestorage.app/sessions/ea7196fa-0b8b-4bf4-bd16-9ef8f88a7e09/frame-6.png",
-      "https://storage.googleapis.com/cs231n-isaac.firebasestorage.app/sessions/ea7196fa-0b8b-4bf4-bd16-9ef8f88a7e09/frame-7.png",
-    ]);
-
-    setIsLoading(false);
-
-    // if (images.length == 0) {
-    //   setIsLoading(true);
-    //   sendPrompt(params.sessionId).finally(() => setIsLoading(false));
-    // }
+    if (images.length == 0) {
+      setIsLoading(true);
+      sendPrompt(params.sessionId).finally(() => setIsLoading(false));
+    }
   }, [params.sessionId]);
-
-  const AutoScrollingRow = ({
-    images, // [{ uri: "...", text: "..." }, …]
-    speed = 0.4, // px per animation frame  (tweak to taste)
-    resumeDelay = 3000, // ms to wait after user stops scrolling
-  }) => {
-    const ref = useRef(null); // ScrollView handle
-    const [offset, setOff] = useState(0); // current scroll offset
-    const [contentW, setCW] = useState(1); // content width
-    const [containerW, setVW] = useState(0); // viewport width
-    const userScrolling = useRef(false); // is the user dragging?
-    const rafId = useRef(null); // rAF handle
-    const resumeTimer = useRef(null); // setTimeout handle
-
-    /* ---------- core autoscroll loop ---------- */
-    useEffect(() => {
-      const step = () => {
-        if (!userScrolling.current && ref.current) {
-          const next = offset + speed;
-          const max = contentW - containerW;
-          const x = next >= max ? 0 : next; // loop back
-          ref.current.scrollTo({ x, animated: false });
-          setOff(x);
-        }
-        rafId.current = requestAnimationFrame(step);
-      };
-      rafId.current = requestAnimationFrame(step);
-      return () => cancelAnimationFrame(rafId.current);
-    }, [offset, speed, contentW, containerW]);
-
-    /* ---------- handlers to pause / resume ---------- */
-    const onScrollBeginDrag = () => {
-      userScrolling.current = true;
-      clearTimeout(resumeTimer.current);
-    };
-
-    const onScrollEndDrag = () => {
-      resumeTimer.current = setTimeout(() => {
-        userScrolling.current = false;
-      }, resumeDelay);
-    };
-
-    return (
-      <ScrollView
-        ref={ref}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onContentSizeChange={(w) => setCW(w)}
-        onLayout={(e) => setVW(e.nativeEvent.layout.width)}
-        onScrollBeginDrag={onScrollBeginDrag}
-        onScrollEndDrag={onScrollEndDrag}
-        style={styles.row}
-      >
-        {/* {images.map(({ uri, text }, i) => (
-          <ImageCard key={i} uri={{ uri }} text={text} />
-        ))} */}
-        {images.map((img, i) => (
-          <ImageCard key={i} uri={img} text={"Hello World"} />
-        ))}
-      </ScrollView>
-    );
-  };
 
   if (isLoading) {
     return (
@@ -175,23 +149,46 @@ export default function DisplayScreen() {
   if (images.length > 0) {
     return (
       <View style={styles.viewerContainer}>
-        {/* <ImageCard
-          uri={images[0]}
-          text={
-            "miawat stands at the edge of a bustling track field at dawn, stretching her legs with determined eyes, her windswept hair and freckles catching the early sunlight as she prepares for a race. The scene is in the style of a realistic photograph."
-          }
-        /> */}
-        <AutoScrollingRow images={images} />
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
+        <Pressable
+          style={styles.backButton}
+          onPress={() => {
+            // Reset everything
+            setImages([]);
+            setScenes([]);
+            setIsLoading(true);
+            ref.current?.scrollTo(0);
+            router.back();
+          }}
+        >
           <Text style={styles.backText}>‹ Back</Text>
         </Pressable>
+        <Carousel
+          loop={false}
+          ref={ref}
+          // autoPlay={true}
+          // autoPlayInterval={4000}
+          // scrollAnimationDuration={8000}
+          data={images}
+          height={600}
+          width={500}
+          pagingEnabled={true}
+          style={{ width: WIDTH }}
+          renderItem={({ item, index }) => (
+            <ImageCard uri={{ uri: item }} text={scenes[index]} />
+          )}
+        />
       </View>
     );
   }
 
   return (
     <View style={styles.loadingContainer}>
-      <Pressable onPress={() => router.back()}>
+      <Pressable
+        onPress={() => {
+          setIsLoading(false);
+          router.back();
+        }}
+      >
         <Text style={{ color: "white" }}>Go Back</Text>
       </Pressable>
     </View>
@@ -231,28 +228,5 @@ const styles = StyleSheet.create({
   backText: {
     color: "#ffffff",
     fontSize: 18,
-  },
-  row: {
-    flexGrow: 0, // don’t let it stretch vertically
-    cursor: "grab", // UX hint on web
-  },
-  card: {
-    backgroundColor: "white",
-    elevation: 2,
-    marginHorizontal: 20,
-    height: 600,
-    width: 450,
-    overflow: "hidden",
-    borderRadius: 16,
-  },
-  image: {
-    height: 450,
-    width: 450,
-  },
-  caption: {
-    margin: 14,
-    lineHeight: 20,
-    fontFamily: "Inter",
-    fontSize: 15,
   },
 });

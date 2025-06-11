@@ -91,7 +91,14 @@ export default function LandingScreen() {
           <ProfileCard key={profile.id} profile={profile} />
         ))}
       </View>
-      <Pressable style={styles.button} onPress={() => console.log("Test")}>
+      <Pressable
+        style={styles.button}
+        onPress={() =>
+          router.push({
+            pathname: "/demo",
+          })
+        }
+      >
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Text style={styles.buttonText}>View a Demo</Text>
           <Entypo
